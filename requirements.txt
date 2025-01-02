@@ -1,0 +1,5 @@
+browserstack-local >= 1.2.3
+selenium
+rapidfuzz
+http
+browserstack-sdk
