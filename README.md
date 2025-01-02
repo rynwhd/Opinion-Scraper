@@ -147,19 +147,3 @@ Title (EN): ["Sciammarella"]
 ```text
 {'["the': 3, 'of': 4, 'and': 5, 'the': 7, 'in': 3}
 ```
-
----
-
-## Customization
-
-- **Image Download**: Uncomment the image extraction and download section in the code to save images locally.
-- **Section Limit**: Adjust the `limit=20` parameter in the BeautifulSoup `find_all` call to scrape more or fewer articles.
-
----
-
-## Known Issues
-
-1. Popups on the El País website may vary; the script handles common cases but might require adjustments for new popups.
-2. Translation accuracy depends on the Rapid Translate API.
-
----
