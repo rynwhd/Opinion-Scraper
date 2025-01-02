@@ -6,8 +6,10 @@ import time
 from rapidfuzz.process import extract
 import json
 import http.client
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 
-def translate_text(text, source_lang='es', target_lang='en'): ## function to translate es to en
+## function to translate es to en
+def translate_text(text, source_lang='es', target_lang='en'): 
     conn = http.client.HTTPSConnection("rapid-translate-multi-traduction.p.rapidapi.com")
 
     payload = json.dumps({
@@ -29,13 +31,16 @@ def translate_text(text, source_lang='es', target_lang='en'): ## function to tra
 
     return data.decode("utf-8") #check different latin encoding
 
+#setting up options for ChromeDriver
+options = ChromeOptions()
+options.set_capability('sessionName', 'BStack Sample Test')
 driver = webdriver.Chrome()
 
 # 1. Open El País website
 driver.get("https://elpais.com")
 time.sleep(1)  # Wait for page to load
 
-# 2. Checking for Pop Up
+# 2. Checking for Pop Up on Home Page
 try:
     popup_close_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Aceptar') or contains(text(), 'Close')]")
     popup_close_button.click()
@@ -56,15 +61,26 @@ except ElementClickInterceptedException:
     driver.execute_script("arguments[0].click();", opinion_section)
     time.sleep(1)
 
+#Extracting Article Links 
 print(" Extract article details")
 soup = BeautifulSoup(driver.page_source, 'html.parser')
-articles = soup.find_all('article', limit=20)
+articles = soup.find_all('article', limit=5)
+print(type(articles))
 
-print(" Function to translate text using Rapid Translate Multi Traduction API")
+#Checking if Articles ResultSet is retrieved, setting test status as passed for BS dashboard
+if articles:
+        # Set the status of test as 'passed' if articles are recovered
+        driver.execute_script(
+            'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"passed", "reason": "articles recovered"}}')
+else:
+        # Set the status of test as 'failed' if articles not recovered
+        driver.execute_script(
+            'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"failed", "reason": "articles not recovered"}}')
+
+print(" Function Call to translate text using Rapid Translate Multi Traduction API") #for each article in the result set, individual calls will be made to retrieve complete article title
 
 
-
-article_data = []
+article_data = [] 
 
 for article in articles:
     # Extract title
@@ -93,23 +109,13 @@ for article in articles:
     paragraphs = article_soup.find_all('p')
     content = ' '.join([p.text for p in paragraphs])
 
-    # Extract and download image
-    # img_tag = article_soup.find('img')
-    # img_url = img_tag['src'] if img_tag else None
-
-    # if img_url:
-    #     img_data = requests.get(img_url).content
-    #     img_name = f"{title[:50].replace(' ', '_')}.jpg"
-    #     with open(img_name, 'wb') as handler:
-    #         handler.write(img_data)
-
     article_data.append({
         "title": title,
         "translated_title": translated_title,
         "content": content
     })
 
-# # Close the driver
+# Close the driver
 driver.quit()
 
 # Print results
@@ -117,7 +123,6 @@ print("Article Details:")
 for data in article_data:
     print(f"Title (ES): {data['title']}")
     print(f"Title (EN): {data['translated_title']}")
-    # print(f"Content: {data['content'][:500]}...")  # Print first 500 chars
     print('-' * 80)
 
 # Analyze Translated Headers
@@ -131,6 +136,7 @@ for data in article_data:
         else:
             word_count[word] = 1
 
+#Check reptition in the words and print count of items with value greater than 2
 repeated_words = {k: v for k, v in word_count.items() if v > 2}
 print("Repeated Words in Translated Headers:")
 print(repeated_words)
